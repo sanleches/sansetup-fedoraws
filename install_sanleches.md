@@ -331,8 +331,6 @@ code --install-extension paulober.pico-w-go@4.3.4
 code --install-extension raspberry-pi.raspberry-pi-pico@0.20.0
 ```
 
+## Manual Reminders
 
-Install
-- Docker / Docker Compose
-
-- Clang / Clang++
+- Do Stuff
