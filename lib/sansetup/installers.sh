@@ -89,10 +89,12 @@ install_repositories() {
   fi
 }
 
-# Upgrade PipeWire/WirePlumber packages to avoid Steam i686 multilib conflicts.
-repair_pipewire_multilib_conflict() {
-  log "Checking PipeWire multilib state before Steam/i686 dependencies"
-  dnf_upgrade_no_prompt 'pipewire*' 'wireplumber*' || warn "PipeWire upgrade did not complete; continuing with normal install fallback."
+# Sync all packages to repo versions to avoid i686/x86_64 version skew conflicts.
+# Steam pulls in ~200+ i686 dependencies; if any x86_64 package has an old
+# duplicate installed, the i686 version's files will collide with it.
+repair_multilib_conflict() {
+  log "Running distro-sync to resolve i686/x86_64 version skew before Steam install"
+  run_with_retries_no_prompt "dnf distro-sync" sudo dnf distro-sync -y --refresh --setopt=timeout=30 --setopt=retries=3 || warn "distro-sync did not complete cleanly; continuing with normal install fallback."
 }
 
 # Install RPM packages in batch, then recover by installing individually.
@@ -102,7 +104,7 @@ install_rpm_packages() {
   ensure_sudo
 
   if list_contains steam "${packages[@]}"; then
-    repair_pipewire_multilib_conflict
+    repair_multilib_conflict
   fi
 
   if dnf_install_refresh_no_prompt "${packages[@]}"; then
@@ -110,8 +112,8 @@ install_rpm_packages() {
   fi
 
   if list_contains steam "${packages[@]}"; then
-    warn "Batch install failed with Steam selected. Repairing PipeWire multilib packages and retrying once."
-    repair_pipewire_multilib_conflict
+    warn "Batch install failed with Steam selected. Running distro-sync once more and retrying."
+    repair_multilib_conflict
     if dnf_install_refresh_no_prompt "${packages[@]}"; then
       return 0
     fi
@@ -124,7 +126,7 @@ install_rpm_packages() {
       ok "rpm $package already installed"
     else
       if [ "$package" = "steam" ]; then
-        repair_pipewire_multilib_conflict
+        repair_multilib_conflict
       fi
       dnf_install_refresh "$package" || true
     fi
