@@ -102,6 +102,10 @@ collect_missing() {
     required_repos+=("$DOCKER_REPO_NAME")
   fi
 
+  if inventory_has_rpm steam; then
+    required_repos+=("$STEAM_REPO_NAME")
+  fi
+
   if command -v dnf >/dev/null 2>&1; then
     mapfile -t enabled_repos < <(dnf repolist --enabled 2>/dev/null | awk 'NR > 1 { print $1 }')
   else

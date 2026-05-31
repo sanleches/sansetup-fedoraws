@@ -26,6 +26,19 @@ dnf_upgrade_no_prompt() {
   run_with_retries_no_prompt "dnf upgrade ${*}" sudo dnf upgrade -y --refresh --setopt=timeout=30 --setopt=retries=3 "$@"
 }
 
+# Enable an installed DNF repository definition, supporting both DNF5 and DNF4 syntax.
+enable_dnf_repo() {
+  local repo="$1"
+
+  if repo_enabled "$repo"; then
+    ok "$repo repository already enabled"
+    return 0
+  fi
+
+  run_with_retries "enable $repo repository" sudo dnf config-manager setopt "$repo.enabled=1" || \
+    run_with_retries "enable $repo repository" sudo dnf config-manager --set-enabled "$repo"
+}
+
 # Configure RPM Fusion, VS Code, Tailscale, and Docker repositories as needed.
 install_repositories() {
   ensure_sudo
@@ -38,6 +51,10 @@ install_repositories() {
       "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm" || true
   else
     ok "RPM Fusion repositories already enabled"
+  fi
+
+  if inventory_has_rpm steam; then
+    enable_dnf_repo "$STEAM_REPO_NAME" || warn "Could not enable $STEAM_REPO_NAME; Steam install may fail."
   fi
 
   if ! repo_enabled code; then

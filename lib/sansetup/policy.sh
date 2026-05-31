@@ -36,6 +36,9 @@ REQUIRED_USER_TOOLS=(
 # Optional repo required only when Docker packages are requested.
 DOCKER_REPO_NAME="docker-ce-stable"
 
+# Optional repo required only when Steam is requested.
+STEAM_REPO_NAME="rpmfusion-nonfree-steam"
+
 # Return success when the inventory includes a specific RPM package token.
 inventory_has_rpm() {
   local package="$1"
