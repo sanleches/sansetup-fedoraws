@@ -1,0 +1,15 @@
+*.log
+*.tmp
+.cache/
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*~
+
+# Python cache
+__pycache__/
+
+# Environment files
+.env
+.env.*

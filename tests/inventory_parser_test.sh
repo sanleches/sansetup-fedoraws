@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+export SANSETUP_ROOT="$ROOT_DIR"
+
+# shellcheck source=../lib/sansetup/common.sh
+. "$ROOT_DIR/lib/sansetup/common.sh"
+# shellcheck source=../lib/sansetup/policy.sh
+. "$ROOT_DIR/lib/sansetup/policy.sh"
+# shellcheck source=../lib/sansetup/inventory.sh
+. "$ROOT_DIR/lib/sansetup/inventory.sh"
+
+assert_contains() {
+  local needle="$1"
+  shift
+  local haystack=("$@")
+
+  if ! list_contains "$needle" "${haystack[@]}"; then
+    printf 'Assertion failed: missing expected value: %s\n' "$needle" >&2
+    exit 1
+  fi
+}
+
+assert_not_contains() {
+  local needle="$1"
+  shift
+  local haystack=("$@")
+
+  if list_contains "$needle" "${haystack[@]}"; then
+    printf 'Assertion failed: unexpected value present: %s\n' "$needle" >&2
+    exit 1
+  fi
+}
+
+assert_equals() {
+  local expected="$1"
+  local actual="$2"
+  local label="$3"
+
+  if [ "$expected" != "$actual" ]; then
+    printf 'Assertion failed: %s (expected=%s actual=%s)\n' "$label" "$expected" "$actual" >&2
+    exit 1
+  fi
+}
+
+tmp_guide="$(mktemp)"
+trap 'rm -f "$tmp_guide"' EXIT
+
+cat > "$tmp_guide" <<'EOF'
+# Test Inventory
+
+<!--
+sudo dnf install should-not-parse
+flatpak install flathub com.example.Commented
+-->
+
+```bash
+sudo dnf install \
+  git gcc \
+  code
+```
+
+```bash
+sudo dnf install \
+  https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+```
+
+```bash
+flatpak install flathub com.spotify.Client net.nokyan.Resources
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+```
+
+```bash
+pip3 install --user pyserial mpremote
+python3 -m pip install --user -U ruff
+```
+
+```bash
+rustup component add rustfmt clippy rust-analyzer
+```
+
+```bash
+nvm install --lts
+```
+
+```bash
+code --install-extension ms-python.python@2026.4.0
+code --install-extension ms-vscode.cpptools
+```
+
+Install
+- Docker / Docker Compose
+- Clang / Clang++
+
+```text
+sudo dnf install not-parsed-from-text-fence
+```
+EOF
+
+GUIDE_FILE="$tmp_guide"
+load_inventory
+
+assert_contains git "${RPM_PACKAGES[@]}"
+assert_contains code "${RPM_PACKAGES[@]}"
+assert_contains docker-ce "${RPM_PACKAGES[@]}"
+assert_contains clang "${RPM_PACKAGES[@]}"
+assert_not_contains should-not-parse "${RPM_PACKAGES[@]}"
+assert_not_contains not-parsed-from-text-fence "${RPM_PACKAGES[@]}"
+
+assert_contains com.spotify.Client "${FLATPAK_APPS[@]}"
+assert_not_contains flathub "${FLATPAK_APPS[@]}"
+
+assert_contains pyserial "${PYTHON_PACKAGES[@]}"
+assert_contains ruff "${PYTHON_PACKAGES[@]}"
+
+assert_contains rustfmt "${RUST_COMPONENTS[@]}"
+assert_contains clippy "${RUST_COMPONENTS[@]}"
+
+assert_contains ms-python.python@2026.4.0 "${VSCODE_EXTENSIONS[@]}"
+assert_contains ms-vscode.cpptools "${VSCODE_EXTENSIONS[@]}"
+
+assert_equals "--lts" "$NODE_TARGET" "Node target parsing"
+
+printf 'inventory_parser_test: PASS\n'
