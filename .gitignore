@@ -2,7 +2,10 @@
 *.tmp
 .cache/
 
-# Local active sansetup inventory. Copy install.template.md to this name.
+# Local active sansetup inventory. Copy install.template.sansetup.md to this name.
+install.sansetup.md
+
+# Legacy local inventory name; keep ignored so old personal guides are not committed.
 install.md
 
 # Editor/OS noise

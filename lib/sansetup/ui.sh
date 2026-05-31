@@ -1,4 +1,5 @@
 # ui.sh - Interactive menus and high-level setup orchestration.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # This module owns user interaction. It lets the lower-level installers and
 # checks remain reusable from both interactive and command-oriented flows.
@@ -75,7 +76,7 @@ choose_node_target() {
   printf '1. Latest current release (node)\n'
   printf '2. Latest LTS release (--lts)\n'
   printf '3. Specific version\n'
-  printf '4. install.md target (%s)\n' "$NODE_TARGET"
+  printf '4. active guide target (%s)\n' "$NODE_TARGET"
   divider
 
   while true; do

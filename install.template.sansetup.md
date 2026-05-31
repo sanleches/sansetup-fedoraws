@@ -4,30 +4,35 @@ This is the canonical starter guide for `sansetup`.
 
 First-use workflow:
 
-1. Copy this file to `install.md`.
-2. Edit `install.md` and uncomment only the stacks, apps, and tools you want.
+1. Copy this file to `install.sansetup.md`.
+2. Edit `install.sansetup.md` and uncomment only the stacks, apps, and tools you want.
 3. Run `./sansetup.sh inventory` to verify the parsed plan.
 4. Run `./sansetup.sh` and press Enter to install all parsed items, or choose numbered subsets.
 
 Rules in short:
 
-- `install.md` is local and intentionally untracked.
+- `install.sansetup.md` is local and intentionally untracked.
 - Keep executable inventory inside fenced `bash` code blocks.
 - Lines beginning with `#` inside `bash` fences are disabled inventory.
-- Uncomment whole command blocks or individual package lines to enable them.
+- Uncomment the command starter and the continuation lines you want to enable.
+- Comment every physical line to disable a multiline command.
 - Prose, checklists, links, and `text` fences are documentation only.
 - VS Code extension versions may be pinned with `@version`; install defaults to latest unless you choose pinned versions when prompted.
 
 ## Repository Setup
 
-```bash
-# sudo dnf install \
-#   https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-#   https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+Repository/remotes are managed by `sansetup` during install flows. These commands
+are reference only, so they live in a `text` fence and are not parsed as
+inventory.
 
-# sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-# sudo dnf config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
-# sudo dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+```text
+sudo dnf install \
+  https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+  https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo dnf config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+sudo dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
 ```
 
 ## Core Workstation Tools
@@ -122,19 +127,20 @@ Compatibility/diagnostic additions:
 
 ## Rust Development
 
+Rustup installation and `stable` selection are handled by `sansetup` when Rust
+components are selected.
+
 ```bash
-# curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-# rustup default stable
 # rustup component add rustfmt clippy rust-analyzer
 ```
 
 ## Node.js and Web Development
 
+NVM installation, default aliasing, `nvm use`, and `corepack enable` are handled
+by `sansetup` when Node is selected.
+
 ```bash
 # nvm install node
-# nvm alias default node
-# nvm use node
-# corepack enable
 ```
 
 Optional web tooling helpers:
@@ -216,9 +222,9 @@ Kubernetes/cloud CLIs:
 
 ## Desktop Applications (Flatpak)
 
-```bash
-# flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+The Flathub remote is added automatically when Flatpak apps are selected.
 
+```bash
 # flatpak install flathub \
 #   com.spotify.Client net.nokyan.Resources com.discordapp.Discord \
 #   com.github.tchx84.Flatseal org.videolan.VLC \

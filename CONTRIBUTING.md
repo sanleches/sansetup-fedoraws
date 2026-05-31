@@ -4,7 +4,7 @@ Thanks for improving `sansetup-fedoraws`.
 
 ## Principles
 
-- Keep `install.md` as the single inventory source of truth.
+- Keep `install.sansetup.md` as the local inventory source of truth.
 - Keep `sansetup.sh` thin; place behavior in `lib/sansetup/*.sh` modules.
 - Prefer deterministic and idempotent operations.
 - Keep interactive prompts safe by default.

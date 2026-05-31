@@ -1,4 +1,5 @@
 # policy.sh - Central policy defaults for verification and install operations.
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # Repository and remote names expected on a fully provisioned workstation.
 REQUIRED_REPOS=(

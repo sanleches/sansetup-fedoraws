@@ -20,7 +20,6 @@ Optional communication and gaming:
 ```
 
 ```bash
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install flathub \
   com.spotify.Client net.nokyan.Resources com.github.tchx84.Flatseal
 ```

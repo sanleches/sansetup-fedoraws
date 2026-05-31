@@ -1,4 +1,5 @@
 # checks.sh - Verification predicates and missing-item reporting.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # This module contains read-only checks. It does not modify the system and is
 # safe to run repeatedly. Installers call collect_missing before install-missing

@@ -1,4 +1,4 @@
-# Sansetup Markdown Standard
+# Sansetup Pseudo-Markdown Standard
 
 This document defines the `sansetup` Markdown pseudo-language. The goal is to let
 developers maintain setup inventories as readable Markdown while giving the tool
@@ -13,14 +13,15 @@ A guide file is both documentation and executable inventory.
 - `#` comments inside shell fences disable inventory lines.
 - Users enable work by uncommenting supported command lines.
 
-The default active guide is `install.md`. It is local-only and ignored by git.
-Tracked starter material lives in `install.template.md` and `templates/*.md`.
+The default active guide is `install.sansetup.md`. It is local-only and ignored
+by git. Tracked starter material lives in `install.template.sansetup.md` and
+`templates/*.sansetup.md`.
 
 ## File Roles
 
-- `install.template.md`: canonical starter template.
-- `install.md`: local active inventory, not tracked.
-- `templates/*.md`: prebuilt profile templates that may be copied or used with `--guide`.
+- `install.template.sansetup.md`: canonical starter template.
+- `install.sansetup.md`: local active inventory, not tracked.
+- `templates/*.sansetup.md`: prebuilt profile templates that may be copied or used with `--guide`.
 
 ## Parse Boundary
 
@@ -44,7 +45,9 @@ Documentation-only fences such as `text`, `json`, `ini`, or `toml` are ignored.
 
 ## Comment Semantics
 
-Inside shell fences, a line beginning with `#` is disabled inventory:
+Inside shell fences, a line beginning with `#` is disabled inventory. There is
+no Bash heredoc-style or block-comment syntax in the DSL; use one `#` per
+disabled line.
 
 ```bash
 # sudo dnf install git gcc
@@ -62,7 +65,8 @@ Inline comments are allowed after active tokens:
 sudo dnf install git gcc  # base build tools
 ```
 
-For multiline commands, every active package line must be uncommented:
+For active multiline commands, every active continuation line must be
+uncommented:
 
 ```bash
 sudo dnf install \
@@ -70,8 +74,38 @@ sudo dnf install \
   cmake ninja-build
 ```
 
+To disable an entire multiline command, comment every physical line in that
+command:
+
+```bash
+# sudo dnf install \
+#   git gcc make \
+#   cmake ninja-build
+```
+
 If the command starter is commented, the whole command is disabled even if later
-lines are uncommented incorrectly. Keep blocks consistently commented/uncommented.
+lines are uncommented incorrectly. Keep multiline blocks consistently
+commented/uncommented.
+
+Markdown HTML comments are stripped before parsing when they are standalone
+blocks. This is useful for authoring notes that may contain command examples:
+
+````markdown
+<!--
+This whole block is ignored by the parser.
+
+```bash
+sudo dnf install example-package
+```
+-->
+````
+
+HTML comments should start on a line beginning with `<!--` and end on a line
+containing `-->`. Do not rely on inline HTML comments inside active shell fences.
+
+Tracked ready-to-use templates must keep active shell fences limited to supported
+command shapes. Manual/reference commands should be prose, `text` fences, or
+commented lines.
 
 ## Supported Command Shapes
 
@@ -204,8 +238,8 @@ supported command shape is added to the parser and tests.
 After editing a guide:
 
 ```bash
-./sansetup.sh --guide path/to/guide.md inventory
-./sansetup.sh --guide path/to/guide.md verify
+./sansetup.sh --guide path/to/guide.sansetup.md inventory
+./sansetup.sh --guide path/to/guide.sansetup.md verify
 ```
 
 For the default local guide:

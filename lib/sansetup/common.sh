@@ -1,11 +1,12 @@
 # common.sh - Shared state, logging, prompting, sudo, and retry primitives.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # The rest of the project uses this module for all cross-cutting behavior. It
 # centralizes mutable state, user-facing output helpers, retry policies, sudo
 # credential refresh, and small array utilities. Keeping these concerns here
 # prevents installer/check modules from each inventing their own error handling.
 
-GUIDE_FILE="${GUIDE_FILE:-$SANSETUP_ROOT/install.md}"
+GUIDE_FILE="${GUIDE_FILE:-$SANSETUP_ROOT/install.sansetup.md}"
 NODE_TARGET=""
 SUDO_KEEPALIVE_PID=""
 VSCODE_USE_PINNED=""

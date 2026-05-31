@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 # sansetup.sh - Fedora Workstation setup entrypoint.
 #
 # This file is intentionally small. It discovers the project root, loads the
 # modular Bash implementation from lib/sansetup, parses a Markdown setup guide
-# (`install.md` by default), and dispatches the requested command. Keeping this
+# (`install.sansetup.md` by default), and dispatches the requested command. Keeping this
 # file thin makes the command stable while allowing the implementation to be
 # maintained in focused modules.
 #
 # Supported commands:
 #   menu             Interactive menu, used when no command is provided.
-#   install-all      Offer to install every item parsed from install.md.
+#   install-all      Offer to install every item parsed from the active guide.
 #   install-missing  Verify the system, then offer to install missing items.
 #   verify           Print missing items without changing the system.
 #   inventory        Print the parsed inventory summary.

@@ -1,21 +1,51 @@
 # sansetup-fedoraws
 
-Menu-driven Fedora Workstation setup tool driven by a Markdown inventory file.
+Menu-driven Fedora Workstation setup tool driven by a readable
+Pseudo-Markdown inventory file.
 
-`sansetup` treats Markdown as a small pseudo-language: users copy a template,
-uncomment the stacks/tools they want, and run the script. The active local file is
-`install.md`, which is intentionally ignored by git so every developer can keep a
-personal setup plan.
+## What This Is
+
+`sansetup` turns a documented setup guide into an install plan for Fedora
+Workstation. You describe the packages, Flatpaks, language tooling, and VS Code
+extensions you want in a Markdown file, then run the script to verify or install
+that inventory.
+
+The guide is intentionally human-first. It can contain prose, sections, links,
+notes, and examples. The script only parses a small set of supported shell-like
+commands from fenced code blocks. It does not blindly execute arbitrary Markdown
+or every shell command in the file.
+
+## Pseudo-Markdown
+
+The guide format is normal Markdown plus a small `sansetup` pseudo-language.
+The `.sansetup.md` suffix means "this renders as Markdown, but some fenced shell
+commands are machine-readable inventory."
+
+This gives the project a practical balance:
+
+- Markdown stays readable in editors and GitHub.
+- Users customize setup by uncommenting lines instead of editing Bash arrays.
+- The parser remains conservative and predictable.
+- Unsupported or risky shell snippets can remain as documentation without being run.
+
+The full language specification lives in `docs/PSEUDOMARKDOWN_STANDARD.md`.
+
+## File Roles
+
+- `install.sansetup.md`: your local active setup plan. It is ignored by git.
+- `install.template.sansetup.md`: canonical starter template tracked by the repo.
+- `templates/*.sansetup.md`: ready-to-use profile templates.
+- `docs/PSEUDOMARKDOWN_STANDARD.md`: exact parser and authoring rules.
 
 ## First Use
 
 ```bash
 cd ~/repos/sansetup-fedoraws
-cp install.template.md install.md
+cp install.template.sansetup.md install.sansetup.md
 ```
 
-Edit `install.md`, uncomment the sections you want, then verify what the parser
-will install:
+Edit `install.sansetup.md`, uncomment the stacks/tools you want, then verify
+what the parser sees:
 
 ```bash
 ./sansetup.sh inventory
@@ -39,52 +69,162 @@ At item prompts, pressing Enter selects all shown items. You can still choose
 ./sansetup.sh install-all
 ```
 
-Use a specific Markdown guide instead of local `install.md`:
+Use a specific guide instead of local `install.sansetup.md`:
 
 ```bash
-./sansetup.sh --guide templates/cpp-systems.md inventory
-./sansetup.sh --guide ~/team-fedora-workstation.md install-all
+./sansetup.sh --guide templates/cpp-systems.sansetup.md inventory
+./sansetup.sh --guide ~/team-fedora-workstation.sansetup.md install-all
 ```
+
+## How Parsing Works
+
+Only shell fences are parsed:
+
+````markdown
+```bash
+sudo dnf install git gcc make
+```
+````
+
+Accepted shell fence labels are empty fences, `bash`, `sh`, `shell`, and `zsh`.
+Documentation-only fences such as `text`, `json`, `ini`, and `toml` are ignored.
+Normal Markdown prose, links, checklists, tables, and headings are documentation.
+
+The parser extracts known inventory tokens and then the installer runs known
+implementation functions. For example, a `flatpak install` line contributes app
+IDs to the Flatpak install list; it is not executed verbatim from the guide.
+
+## Supported Inventory Commands
+
+DNF/RPM packages:
+
+```bash
+sudo dnf install git gcc make
+```
+
+Flatpak apps:
+
+```bash
+flatpak install flathub com.spotify.Client net.nokyan.Resources
+```
+
+Python user packages:
+
+```bash
+python3 -m pip install --user ruff pytest
+pip3 install --user mpremote pyserial
+```
+
+Rust components:
+
+```bash
+rustup component add rustfmt clippy rust-analyzer
+```
+
+Node/NVM target:
+
+```bash
+nvm install node
+```
+
+VS Code extensions:
+
+```bash
+code --install-extension ms-python.python
+code --install-extension ms-python.vscode-pylance@2026.2.1
+```
+
+VS Code extension pins use `publisher.extension@version`. Verification ignores
+pin versions and install defaults to latest unless you choose pinned versions
+when prompted.
+
+## Comments And Multiline Rules
+
+Inside shell fences, `#` disables one physical line:
+
+```bash
+# sudo dnf install git gcc
+```
+
+To disable a multiline command, comment every physical line:
+
+```bash
+# sudo dnf install \
+#   git gcc make \
+#   cmake ninja-build
+```
+
+Active multiline commands are supported when continuation lines use `\`:
+
+```bash
+sudo dnf install \
+  git gcc make \
+  cmake ninja-build
+```
+
+Standalone Markdown HTML comments are stripped before parsing:
+
+````markdown
+<!--
+This entire block is ignored by the parser.
+
+```bash
+sudo dnf install example-package
+```
+-->
+````
+
+There is no custom Bash-style multiline comment syntax in the DSL.
 
 ## Templates
 
-- `install.template.md`: canonical root starter template. Copy this to `install.md` before first use.
-- `templates/general-desktop-dev.md`: general desktop developer workstation.
-- `templates/cpp-systems.md`: C/C++ systems development.
-- `templates/python-data.md`: Python data, automation, and API work.
-- `templates/kernel-lab.md`: Linux kernel/module lab.
-- `templates/fullstack-web.md`: Node/Python/container web development.
+- `install.template.sansetup.md`: canonical root starter template.
+- `templates/general-desktop-dev.sansetup.md`: general desktop developer workstation.
+- `templates/cpp-systems.sansetup.md`: C/C++ systems development.
+- `templates/python-data.sansetup.md`: Python data, automation, and API work.
+- `templates/kernel-lab.sansetup.md`: Linux kernel/module lab.
+- `templates/fullstack-web.sansetup.md`: Node/Python/container web development.
 
-## Markdown Standard
+Use a profile directly:
 
-The full pseudo-language specification is documented in `docs/MARKDOWN_STANDARD.md`.
+```bash
+./sansetup.sh --guide templates/fullstack-web.sansetup.md inventory
+```
 
-Short version:
+Or copy one into your local active guide:
 
-- Only fenced shell blocks are executable inventory.
-- Lines starting with `#` inside shell blocks are disabled inventory.
-- Uncommenting a line enables it.
-- Prose, lists, links, and `text` code fences are documentation only.
-- DNF/RPM, Flatpak, Python pip, Rustup components, NVM Node targets, and VS Code extensions are parsed.
-- VS Code extension pins (`publisher.extension@version`) are supported, but install defaults to latest unless the user opts into pinned versions.
+```bash
+cp templates/python-data.sansetup.md install.sansetup.md
+```
+
+## Safety Model
+
+The guide is not a shell script. `sansetup` parses supported command shapes into
+inventory arrays, deduplicates tokens, verifies current state, and runs installer
+functions that are maintained in `lib/sansetup/installers.sh`.
+
+Unsupported shell commands in active shell fences are ignored by the runtime
+parser, but tracked templates are linted by `./tests/run.sh` so reusable profiles
+stay strict and ready to use. Manual/reference commands should be prose, `text`
+fences, or fully commented shell lines.
 
 ## Design
 
 Project layout:
 
 ```text
-sansetup.sh                    Thin entrypoint and command dispatcher
-install.template.md            Canonical starter inventory template
-install.md                     Local active inventory, gitignored
-templates/*.md                 Prebuilt developer profile inventories
-docs/ARCHITECTURE.md           Runtime architecture notes
-docs/MARKDOWN_STANDARD.md      Markdown pseudo-language specification
-lib/sansetup/common.sh         Shared state, logging, prompts, sudo, retries
-lib/sansetup/policy.sh         Central policy defaults for repos/services/groups/tools
-lib/sansetup/inventory.sh      Markdown inventory parser
-lib/sansetup/checks.sh         Read-only verification logic
-lib/sansetup/installers.sh     Mutating install/service/group operations
-lib/sansetup/ui.sh             Menu and install-plan orchestration
+sansetup.sh                         Thin entrypoint and command dispatcher
+install.template.sansetup.md        Canonical starter inventory template
+install.sansetup.md                 Local active inventory, gitignored
+templates/*.sansetup.md             Prebuilt developer profile inventories
+docs/ARCHITECTURE.md                Runtime architecture notes
+docs/PSEUDOMARKDOWN_STANDARD.md     Pseudo-Markdown language specification
+lib/sansetup/common.sh              Shared state, logging, prompts, sudo, retries
+lib/sansetup/policy.sh              Central policy defaults for repos/services/groups/tools
+lib/sansetup/inventory.sh           Pseudo-Markdown inventory parser
+lib/sansetup/checks.sh              Read-only verification logic
+lib/sansetup/installers.sh          Mutating install/service/group operations
+lib/sansetup/ui.sh                  Menu and install-plan orchestration
 ```
 
 ## Failure Handling
@@ -105,5 +245,10 @@ Run the repository checks before opening a change:
 ./tests/run.sh
 ```
 
-This runs Bash syntax validation, parser behavior tests, and template inventory
-smoke checks.
+This runs Bash syntax validation, parser behavior tests, template compliance
+linting, and template inventory smoke checks.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or later
+(`GPL-3.0-or-later`). See `LICENSE` for the full license text.

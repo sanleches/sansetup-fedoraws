@@ -1,6 +1,7 @@
 # inventory.sh - Parse a Markdown guide into runtime inventory arrays.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# The active guide (install.md by default, or --guide <file>) is the source of
+# The active guide (install.sansetup.md by default, or --guide <file>) is the source of
 # truth. This module extracts package, Flatpak, Rust, Python, VS Code, and Node
 # targets from documented shell fences rather than duplicating inventory in Bash.
 # The parser is deliberately conservative: it consumes recognized command shapes
@@ -10,8 +11,8 @@
 # Ensure the configured Markdown guide exists before parsing it.
 require_guide() {
   if [ ! -f "$GUIDE_FILE" ]; then
-    if [ "$GUIDE_FILE" = "$SANSETUP_ROOT/install.md" ] && [ -f "$SANSETUP_ROOT/install.template.md" ]; then
-      die "Guide file not found: $GUIDE_FILE. First run: cp install.template.md install.md, then edit install.md."
+    if [ "$GUIDE_FILE" = "$SANSETUP_ROOT/install.sansetup.md" ] && [ -f "$SANSETUP_ROOT/install.template.sansetup.md" ]; then
+      die "Guide file not found: $GUIDE_FILE. First run: cp install.template.sansetup.md install.sansetup.md, then edit install.sansetup.md."
     fi
     die "Guide file not found: $GUIDE_FILE"
   fi
@@ -20,7 +21,7 @@ require_guide() {
 
 # Print the guide with standalone HTML comment blocks removed.
 #
-# The project uses HTML comments in install.md to embed authoring rules beside
+# The project uses HTML comments in guide files to embed authoring rules beside
 # the inventory. Those comments may contain command examples, so every parser
 # consumes this filtered stream instead of the raw Markdown. Comments are expected
 # to be standalone blocks that begin with <!-- and end with --> on their own
@@ -40,7 +41,7 @@ strip_markdown_comments() {
   ' "$1"
 }
 
-# Emit install.md contents after comment stripping.
+# Emit guide contents after comment stripping.
 inventory_stream() {
   strip_markdown_comments "$GUIDE_FILE"
 }
@@ -216,7 +217,7 @@ parse_node_target() {
   '
 }
 
-# Parse install.md into global inventory arrays used by checks and installers.
+# Parse the active guide into global inventory arrays used by checks and installers.
 load_inventory() {
   require_guide
 
@@ -235,7 +236,7 @@ load_inventory() {
   NODE_TARGET="${NODE_TARGET:-node}"
 }
 
-# Print a compact summary of what was parsed from install.md.
+# Print a compact summary of what was parsed from the active guide.
 show_inventory_summary() {
   log "Inventory from $GUIDE_FILE"
   printf 'RPM packages: %d\n' "${#RPM_PACKAGES[@]}"

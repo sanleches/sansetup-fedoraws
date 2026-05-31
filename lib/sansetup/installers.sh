@@ -1,4 +1,5 @@
 # installers.sh - System and user-space installation operations.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # This module performs all mutating work. It wraps DNF, Flatpak, Rustup, NVM,
 # pip, VS Code, systemd, and local RPM installs with retry handling. Batch DNF
@@ -181,7 +182,7 @@ install_vscode_extensions() {
   fi
 
   if [ -z "$VSCODE_USE_PINNED" ]; then
-    if confirm "Install VS Code extensions at versions pinned in install.md? Choose no for latest." "n"; then
+    if confirm "Install VS Code extensions at versions pinned in the active guide? Choose no for latest." "n"; then
       VSCODE_USE_PINNED="yes"
     else
       VSCODE_USE_PINNED="no"

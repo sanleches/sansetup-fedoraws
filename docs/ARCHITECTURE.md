@@ -5,7 +5,7 @@
 ## Runtime Flow
 
 1. `sansetup.sh` resolves project root and loads modules.
-2. `inventory.sh` parses the active Markdown guide into runtime arrays (`install.md` by default, or `--guide <file>`).
+2. `inventory.sh` parses the active Markdown guide into runtime arrays (`install.sansetup.md` by default, or `--guide <file>`).
 3. `checks.sh` verifies current system state.
 4. `installers.sh` applies mutating operations.
 5. `ui.sh` orchestrates menu and plan execution.
@@ -51,6 +51,6 @@
 
 ## Guide Files
 
-- `install.template.md` is tracked and canonical.
-- `install.md` is ignored by git and belongs to the local user.
-- `templates/*.md` are tracked, prebuilt profiles usable directly with `--guide` or as copy sources.
+- `install.template.sansetup.md` is tracked and canonical.
+- `install.sansetup.md` is ignored by git and belongs to the local user.
+- `templates/*.sansetup.md` are tracked, prebuilt profiles usable directly with `--guide` or as copy sources.
