@@ -233,7 +233,6 @@ load_inventory() {
   mapfile -t VSCODE_EXTENSIONS < <(parse_vscode_extensions | unique_lines)
 
   NODE_TARGET="$(parse_node_target)"
-  NODE_TARGET="${NODE_TARGET:-node}"
 }
 
 # Print a compact summary of what was parsed from the active guide.
@@ -244,5 +243,9 @@ show_inventory_summary() {
   printf 'Python user packages: %d\n' "${#PYTHON_PACKAGES[@]}"
   printf 'Rust components: %d\n' "${#RUST_COMPONENTS[@]}"
   printf 'VS Code extensions: %d\n' "${#VSCODE_EXTENSIONS[@]}"
-  printf 'Node target: %s\n' "$NODE_TARGET"
+  if [ -n "$NODE_TARGET" ]; then
+    printf 'Node target: %s\n' "$NODE_TARGET"
+  else
+    printf 'Node target: not requested\n'
+  fi
 }

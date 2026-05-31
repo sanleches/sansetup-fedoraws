@@ -27,7 +27,6 @@ REQUIRED_GROUPS=(
 
 # User tools expected to be available on PATH.
 REQUIRED_USER_TOOLS=(
-  npm
   code
   docker
   tailscale

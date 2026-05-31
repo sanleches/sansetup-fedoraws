@@ -127,6 +127,12 @@ Node/NVM target:
 nvm install node
 ```
 
+Node is only installed when an active `nvm install` command exists in the guide.
+Use `nvm install node` for the latest current release, `nvm install --lts` for
+latest LTS, or a numeric version such as `nvm install 24.15.0`. If the guide has
+no active Node/NVM command, `sansetup` does not install Node and does not require
+`npm`.
+
 VS Code extensions:
 
 ```bash

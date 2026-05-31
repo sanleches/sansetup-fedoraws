@@ -186,7 +186,10 @@ Supported targets include:
 - `lts/*`
 - numeric versions such as `24`, `24.15`, `24.15.0`, or `v24.15.0`
 
-If no active `nvm install` command is found, the parser defaults to `node`.
+If no active `nvm install` command is found, Node/NVM is not requested and the
+installer will not install Node or require `npm`. Use `nvm install node` to ask
+for the latest current Node release, or state an explicit target such as `--lts`
+or `24.15.0`.
 
 ### VS Code Extensions
 

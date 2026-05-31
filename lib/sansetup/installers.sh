@@ -165,6 +165,8 @@ install_nvm_node() {
   local alias_target="$target"
   export NVM_DIR="$HOME/.nvm"
 
+  [ -n "$target" ] || return 0
+
   if [ ! -s "$NVM_DIR/nvm.sh" ]; then
     run_with_retries "install NVM" bash -c "curl -fsSL --retry 5 --retry-delay 3 https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash" || return 1
   fi

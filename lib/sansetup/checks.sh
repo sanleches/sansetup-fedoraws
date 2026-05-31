@@ -160,12 +160,16 @@ collect_missing() {
     MISSING_RUST+=("${RUST_COMPONENTS[@]}")
   fi
 
-  if command -v node >/dev/null 2>&1; then
-    if node_target_is_exact_version "$NODE_TARGET" && [ "$(node -v 2>/dev/null)" != "$(normalize_node_version "$NODE_TARGET")" ]; then
-      WARNINGS+=("Node is $(node -v 2>/dev/null), expected $(normalize_node_version "$NODE_TARGET").")
+  if [ -n "$NODE_TARGET" ]; then
+    if command -v node >/dev/null 2>&1; then
+      if node_target_is_exact_version "$NODE_TARGET" && [ "$(node -v 2>/dev/null)" != "$(normalize_node_version "$NODE_TARGET")" ]; then
+        WARNINGS+=("Node is $(node -v 2>/dev/null), expected $(normalize_node_version "$NODE_TARGET").")
+      fi
+    else
+      MISSING_USER_TOOLS+=(node)
     fi
-  else
-    MISSING_USER_TOOLS+=(node)
+
+    command -v npm >/dev/null 2>&1 || MISSING_USER_TOOLS+=(npm)
   fi
 
   for tool in "${REQUIRED_USER_TOOLS[@]}"; do

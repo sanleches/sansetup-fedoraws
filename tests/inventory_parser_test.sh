@@ -141,4 +141,17 @@ assert_not_contains disabled.extension "${VSCODE_EXTENSIONS[@]}"
 
 assert_equals "--lts" "$NODE_TARGET" "Node target parsing"
 
+cat > "$tmp_guide" <<'EOF'
+# No Node Inventory
+
+```bash
+sudo dnf install git
+```
+EOF
+
+GUIDE_FILE="$tmp_guide"
+load_inventory
+
+assert_equals "" "$NODE_TARGET" "Node target is empty when not requested"
+
 printf 'inventory_parser_test: PASS\n'

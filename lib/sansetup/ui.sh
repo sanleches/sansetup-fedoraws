@@ -73,18 +73,19 @@ choose_node_target() {
 
   printf '\nNode install target\n'
   divider
-  printf '1. Latest current release (node)\n'
-  printf '2. Latest LTS release (--lts)\n'
-  printf '3. Specific version\n'
-  printf '4. active guide target (%s)\n' "$NODE_TARGET"
+  printf '1. Active guide target (%s)\n' "$NODE_TARGET"
+  printf '2. Latest current release (node)\n'
+  printf '3. Latest LTS release (--lts)\n'
+  printf '4. Specific version\n'
   divider
 
   while true; do
     read -r -p "Choose Node target [1-4]: " answer
     case "${answer:-1}" in
-      1) SELECTED_NODE_TARGET="node"; return 0 ;;
-      2) SELECTED_NODE_TARGET="--lts"; return 0 ;;
-      3)
+      1) SELECTED_NODE_TARGET="$NODE_TARGET"; return 0 ;;
+      2) SELECTED_NODE_TARGET="node"; return 0 ;;
+      3) SELECTED_NODE_TARGET="--lts"; return 0 ;;
+      4)
         read -r -p "Enter Node version, for example 24, 24.15, 24.15.0, or v24.15.0: " specific
         if node_target_is_exact_version "$specific"; then
           SELECTED_NODE_TARGET="$specific"
@@ -92,7 +93,6 @@ choose_node_target() {
         fi
         printf 'Invalid Node version.\n'
         ;;
-      4) SELECTED_NODE_TARGET="$NODE_TARGET"; return 0 ;;
       *) printf 'Invalid option.\n' ;;
     esac
   done
@@ -144,7 +144,7 @@ install_plan() {
     install_rust_toolchain "${SELECTED_ITEMS[@]}"
   fi
 
-  if confirm "Install or update NVM and Node?" "y"; then
+  if [ -n "$NODE_TARGET" ] && confirm "Install or update NVM and Node?" "y"; then
     choose_node_target
     install_nvm_node "$SELECTED_NODE_TARGET"
   fi
