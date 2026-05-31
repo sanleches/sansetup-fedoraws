@@ -1,19 +1,24 @@
-# inventory.sh - Parse install.md into runtime inventory arrays.
+# inventory.sh - Parse a Markdown guide into runtime inventory arrays.
 #
-# install.md is the source of truth for this project. This module extracts the
-# package, Flatpak, Rust, Python, VS Code, and Node targets from documented code
-# blocks rather than duplicating the inventory in Bash. The parser is deliberately
-# conservative: it only consumes recognized command shapes and ignores repo URLs,
-# local RPM glob examples, unrelated shell commands, and standalone HTML comment
-# blocks used to document the install.md authoring standard.
+# The active guide (install.md by default, or --guide <file>) is the source of
+# truth. This module extracts package, Flatpak, Rust, Python, VS Code, and Node
+# targets from documented shell fences rather than duplicating inventory in Bash.
+# The parser is deliberately conservative: it consumes recognized command shapes
+# and ignores prose, text fences, repo URLs, local RPM examples, unrelated shell
+# commands, disabled # comments, and standalone HTML comment blocks.
 
 # Ensure the configured Markdown guide exists before parsing it.
 require_guide() {
-  [ -f "$GUIDE_FILE" ] || die "Guide file not found: $GUIDE_FILE"
+  if [ ! -f "$GUIDE_FILE" ]; then
+    if [ "$GUIDE_FILE" = "$SANSETUP_ROOT/install.md" ] && [ -f "$SANSETUP_ROOT/install.template.md" ]; then
+      die "Guide file not found: $GUIDE_FILE. First run: cp install.template.md install.md, then edit install.md."
+    fi
+    die "Guide file not found: $GUIDE_FILE"
+  fi
   [ -r "$GUIDE_FILE" ] || die "Guide file is not readable: $GUIDE_FILE"
 }
 
-# Print install.md with standalone HTML comment blocks removed.
+# Print the guide with standalone HTML comment blocks removed.
 #
 # The project uses HTML comments in install.md to embed authoring rules beside
 # the inventory. Those comments may contain command examples, so every parser
@@ -40,18 +45,81 @@ inventory_stream() {
   strip_markdown_comments "$GUIDE_FILE"
 }
 
+# Emit active shell commands from Markdown shell fences as one logical command per
+# line. This is the parser boundary for the sansetup Markdown DSL: prose and text
+# fences are documentation, shell fences are parseable, and # comments inside
+# shell fences are disabled inventory.
+shell_logical_lines() {
+  inventory_stream | awk '
+    function trim(value) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      return value
+    }
+    function flush_pending() {
+      if (pending != "") {
+        print pending
+        pending = ""
+      }
+    }
+    /^```/ {
+      flush_pending()
+      marker = $0
+      sub(/^```[[:space:]]*/, "", marker)
+      marker = trim(marker)
+      if (!in_fence) {
+        in_fence = 1
+        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
+      } else {
+        in_fence = 0
+        in_shell_code = 0
+      }
+      next
+    }
+    !in_shell_code { next }
+    /^[[:space:]]*#/ { next }
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      sub(/[[:space:]]+#.*/, "", line)
+      line = trim(line)
+      if (line == "") next
+
+      continues = (line ~ /\\[[:space:]]*$/)
+      sub(/\\[[:space:]]*$/, "", line)
+      line = trim(line)
+      if (line == "") next
+
+      if (pending == "") pending = line
+      else pending = pending " " line
+
+      if (!continues) flush_pending()
+    }
+    END { flush_pending() }
+  '
+}
+
+# Return success when an un-commented marker phrase exists in guide text.
+has_enabled_marker() {
+  local marker="$1"
+  inventory_stream | awk -v marker="$marker" '
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*[-*][[:space:]]*#/ { next }
+    index($0, marker) > 0 { found = 1; exit }
+    END { exit(found ? 0 : 1) }
+  '
+}
+
 # Parse DNF package tokens from supported command shapes.
 parse_rpm_packages() {
-  inventory_stream | awk '
+  shell_logical_lines | awk '
     function emit(line, items, count, i, token) {
-      gsub(/\\/, "", line)
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
       if (line == "") return
 
       count = split(line, items, /[[:space:]]+/)
       for (i = 1; i <= count; i++) {
         token = items[i]
-        if (token == "" || token == "sudo" || token == "dnf" || token == "install") continue
+        if (token == "" || token == "sudo" || token == "dnf" || token == "dnf5" || token == "install") continue
         if (token ~ /^-/) continue
         if (token ~ /^https?:/) continue
         if (token ~ /^\.\//) continue
@@ -60,61 +128,28 @@ parse_rpm_packages() {
         print token
       }
     }
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      dnf_continues = 0
-      next
-    }
-    !in_shell_code { next }
-    /sudo[[:space:]]+dnf[[:space:]]+install/ {
-      dnf_continues = ($0 ~ /\\[[:space:]]*$/)
-      sub(/^.*sudo[[:space:]]+dnf[[:space:]]+install[[:space:]]+/, "")
-      emit($0)
-      next
-    }
-    dnf_continues {
-      dnf_continues = ($0 ~ /\\[[:space:]]*$/)
-      emit($0)
+    /(^|[;&|])[[:space:]]*(sudo[[:space:]]+)?dnf5?[[:space:]]+install[[:space:]]+/ {
+      line = $0
+      sub(/^.*(sudo[[:space:]]+)?dnf5?[[:space:]]+install[[:space:]]+/, "", line)
+      emit(line)
     }
   '
 
-  if inventory_stream | grep -q 'Docker / Docker Compose'; then
+  if has_enabled_marker 'Docker / Docker Compose'; then
     printf '%s\n' docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   fi
 
-  if inventory_stream | grep -q 'Clang / Clang++'; then
+  if has_enabled_marker 'Clang / Clang++'; then
     printf '%s\n' clang clang-tools-extra lld lldb
   fi
 }
 
 # Parse Flatpak app IDs from supported command shapes.
 parse_flatpak_apps() {
-  inventory_stream | awk '
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      next
-    }
-    !in_shell_code { next }
+  shell_logical_lines | awk '
     /flatpak[[:space:]]+install/ && $0 !~ /remote-add/ {
       line = $0
       sub(/^.*flatpak[[:space:]]+install[[:space:]]+/, "", line)
-      gsub(/\\/, "", line)
       count = split(line, items, /[[:space:]]+/)
       for (i = 1; i <= count; i++) {
         token = items[i]
@@ -128,20 +163,7 @@ parse_flatpak_apps() {
 
 # Parse user-scoped Python packages from pip install commands.
 parse_python_packages() {
-  inventory_stream | awk '
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      next
-    }
-    !in_shell_code { next }
+  shell_logical_lines | awk '
     /pip3[[:space:]]+install/ || /python3[[:space:]]+-m[[:space:]]+pip[[:space:]]+install/ {
       line = $0
       sub(/^.*install[[:space:]]+/, "", line)
@@ -157,20 +179,7 @@ parse_python_packages() {
 
 # Parse rustup components from component add commands.
 parse_rust_components() {
-  inventory_stream | awk '
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      next
-    }
-    !in_shell_code { next }
+  shell_logical_lines | awk '
     /rustup[[:space:]]+component[[:space:]]+add/ {
       line = $0
       sub(/^.*rustup[[:space:]]+component[[:space:]]+add[[:space:]]+/, "", line)
@@ -184,20 +193,7 @@ parse_rust_components() {
 
 # Parse VS Code extension IDs from code install commands.
 parse_vscode_extensions() {
-  inventory_stream | awk '
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      next
-    }
-    !in_shell_code { next }
+  shell_logical_lines | awk '
     /code[[:space:]]+--install-extension/ {
       for (i = 1; i <= NF; i++) {
         if ($i == "--install-extension" && (i + 1) <= NF) print $(i + 1)
@@ -208,20 +204,7 @@ parse_vscode_extensions() {
 
 # Parse the preferred Node/NVM target from install commands.
 parse_node_target() {
-  inventory_stream | awk '
-    /^```/ {
-      marker = $0
-      sub(/^```[[:space:]]*/, "", marker)
-      if (!in_fence) {
-        in_fence = 1
-        in_shell_code = (marker == "" || marker ~ /^(bash|sh|shell|zsh)$/)
-      } else {
-        in_fence = 0
-        in_shell_code = 0
-      }
-      next
-    }
-    !in_shell_code { next }
+  shell_logical_lines | awk '
     {
       for (i = 1; i <= NF; i++) {
         if ($i == "nvm" && (i + 2) <= NF && $(i + 1) == "install") {

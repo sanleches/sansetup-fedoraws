@@ -38,40 +38,72 @@ if [ -s "$HOME/.nvm/nvm.sh" ]; then
   . "$HOME/.nvm/nvm.sh"
 fi
 
+# Return success when stdin/stdout are attached to a terminal.
+is_interactive() {
+  [ -t 0 ] && [ -t 1 ]
+}
+
+COLOR_RESET=""
+COLOR_BOLD=""
+COLOR_DIM=""
+COLOR_BLUE=""
+COLOR_CYAN=""
+COLOR_GREEN=""
+COLOR_YELLOW=""
+COLOR_RED=""
+
+# Enable color output when running in an interactive terminal.
+setup_colors() {
+  if ! is_interactive || [ -n "${NO_COLOR:-}" ] || [ "${TERM:-}" = "dumb" ]; then
+    return 0
+  fi
+
+  COLOR_RESET=$'\033[0m'
+  COLOR_BOLD=$'\033[1m'
+  COLOR_DIM=$'\033[2m'
+  COLOR_BLUE=$'\033[34m'
+  COLOR_CYAN=$'\033[36m'
+  COLOR_GREEN=$'\033[32m'
+  COLOR_YELLOW=$'\033[33m'
+  COLOR_RED=$'\033[31m'
+}
+
+setup_colors
+
 # Print a high-level section header.
 log() {
-  printf '\n==> %s\n' "$*"
+  printf '\n%s%s==>%s %s\n' "$COLOR_BOLD" "$COLOR_BLUE" "$COLOR_RESET" "$*"
 }
 
 # Print an informational line for work in progress.
 info() {
-  printf 'INFO: %s\n' "$*"
+  printf '%sINFO%s: %s\n' "$COLOR_CYAN" "$COLOR_RESET" "$*"
 }
 
 # Print a successful check or operation.
 ok() {
-  printf 'OK: %s\n' "$*"
+  printf '%sOK%s: %s\n' "$COLOR_GREEN" "$COLOR_RESET" "$*"
 }
 
 # Print a warning to stderr without aborting the workflow.
 warn() {
-  printf 'WARN: %s\n' "$*" >&2
+  printf '%sWARN%s: %s\n' "$COLOR_YELLOW" "$COLOR_RESET" "$*" >&2
 }
 
 # Print a missing-item line during verification.
 missing() {
-  printf 'MISSING: %s\n' "$*"
+  printf '%sMISSING%s: %s\n' "$COLOR_YELLOW" "$COLOR_RESET" "$*"
 }
 
 # Print a fatal error and exit the process.
 die() {
-  printf 'ERROR: %s\n' "$*" >&2
+  printf '%sERROR%s: %s\n' "$COLOR_RED" "$COLOR_RESET" "$*" >&2
   exit 1
 }
 
-# Return success when stdin/stdout are attached to a terminal.
-is_interactive() {
-  [ -t 0 ] && [ -t 1 ]
+# Print a visual separator line for easier scanning.
+divider() {
+  printf '%s------------------------------------------------------------%s\n' "$COLOR_DIM" "$COLOR_RESET"
 }
 
 # Ask a yes/no question with a default answer.

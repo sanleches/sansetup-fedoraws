@@ -3,6 +3,13 @@
 # This module owns user interaction. It lets the lower-level installers and
 # checks remain reusable from both interactive and command-oriented flows.
 
+# Print a screen section header used across interactive flows.
+ui_section() {
+  divider
+  printf '%s%s%s\n' "$COLOR_BOLD" "$1" "$COLOR_RESET"
+  divider
+}
+
 # Ask the user to select all, none, or specific numbered items from a list.
 select_items() {
   local prompt="$1"
@@ -20,14 +27,14 @@ select_items() {
     return 0
   fi
 
-  printf '\n%s\n' "$prompt"
+  ui_section "$prompt"
   local i
   for i in "${!items[@]}"; do
     printf '  %d. %s\n' "$((i + 1))" "${items[$i]}"
   done
 
   while true; do
-    read -r -p "Choose all, none, or comma-separated numbers [a/n/1,3]: " answer
+    read -r -p "Choose all (Enter/a), none (n), or comma-separated numbers (1,3): " answer
     case "${answer,,}" in
       a|all|"") SELECTED_ITEMS=("${items[@]}"); return 0 ;;
       n|none) SELECTED_ITEMS=(); return 0 ;;
@@ -64,10 +71,12 @@ choose_node_target() {
   fi
 
   printf '\nNode install target\n'
+  divider
   printf '1. Latest current release (node)\n'
   printf '2. Latest LTS release (--lts)\n'
   printf '3. Specific version\n'
   printf '4. install.md target (%s)\n' "$NODE_TARGET"
+  divider
 
   while true; do
     read -r -p "Choose Node target [1-4]: " answer
@@ -113,6 +122,7 @@ install_plan() {
   fi
 
   show_inventory_summary
+  divider
 
   if confirm "Install or refresh required repositories/remotes?" "y"; then
     install_repositories
@@ -172,12 +182,14 @@ install_plan() {
 # Show the interactive top-level menu and dispatch the selected action.
 main_menu() {
   while true; do
-    printf '\nFedora Workstation Setup\n'
-    printf '1. Install all from install.md\n'
+    ui_section "Fedora Workstation Setup"
+    printf 'Guide: %s\n' "$GUIDE_FILE"
+    printf '1. Install all from guide\n'
     printf '2. Install missing only\n'
     printf '3. Verify missing\n'
     printf '4. Show parsed inventory\n'
     printf '5. Quit\n'
+    divider
     read -r -p "Choose an option [1-5]: " choice
 
     case "$choice" in

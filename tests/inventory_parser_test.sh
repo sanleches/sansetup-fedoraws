@@ -60,6 +60,8 @@ flatpak install flathub com.example.Commented
 sudo dnf install \
   git gcc \
   code
+
+# sudo dnf install should-not-parse-from-shell-comment
 ```
 
 ```bash
@@ -68,30 +70,40 @@ sudo dnf install \
 ```
 
 ```bash
-flatpak install flathub com.spotify.Client net.nokyan.Resources
+flatpak install flathub \
+  com.spotify.Client \
+  net.nokyan.Resources
+# flatpak install flathub com.example.DisabledByComment
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
 
 ```bash
-pip3 install --user pyserial mpremote
+pip3 install --user \
+  pyserial \
+  mpremote
+# pip3 install --user disabled-pip-package
 python3 -m pip install --user -U ruff
 ```
 
 ```bash
 rustup component add rustfmt clippy rust-analyzer
+# rustup component add disabled-component
 ```
 
 ```bash
 nvm install --lts
+# nvm install v20.0.0
 ```
 
 ```bash
-code --install-extension ms-python.python@2026.4.0
-code --install-extension ms-vscode.cpptools
+code --install-extension \
+  ms-python.python@2026.4.0
+code --install-extension ms-vscode.cpptools # inline comment is ignored
+# code --install-extension disabled.extension
 ```
 
 Install
-- Docker / Docker Compose
+# Docker / Docker Compose
 - Clang / Clang++
 
 ```text
@@ -104,22 +116,27 @@ load_inventory
 
 assert_contains git "${RPM_PACKAGES[@]}"
 assert_contains code "${RPM_PACKAGES[@]}"
-assert_contains docker-ce "${RPM_PACKAGES[@]}"
 assert_contains clang "${RPM_PACKAGES[@]}"
+assert_not_contains docker-ce "${RPM_PACKAGES[@]}"
 assert_not_contains should-not-parse "${RPM_PACKAGES[@]}"
 assert_not_contains not-parsed-from-text-fence "${RPM_PACKAGES[@]}"
+assert_not_contains should-not-parse-from-shell-comment "${RPM_PACKAGES[@]}"
 
 assert_contains com.spotify.Client "${FLATPAK_APPS[@]}"
 assert_not_contains flathub "${FLATPAK_APPS[@]}"
+assert_not_contains com.example.DisabledByComment "${FLATPAK_APPS[@]}"
 
 assert_contains pyserial "${PYTHON_PACKAGES[@]}"
 assert_contains ruff "${PYTHON_PACKAGES[@]}"
+assert_not_contains disabled-pip-package "${PYTHON_PACKAGES[@]}"
 
 assert_contains rustfmt "${RUST_COMPONENTS[@]}"
 assert_contains clippy "${RUST_COMPONENTS[@]}"
+assert_not_contains disabled-component "${RUST_COMPONENTS[@]}"
 
 assert_contains ms-python.python@2026.4.0 "${VSCODE_EXTENSIONS[@]}"
 assert_contains ms-vscode.cpptools "${VSCODE_EXTENSIONS[@]}"
+assert_not_contains disabled.extension "${VSCODE_EXTENSIONS[@]}"
 
 assert_equals "--lts" "$NODE_TARGET" "Node target parsing"
 

@@ -2,6 +2,9 @@
 *.tmp
 .cache/
 
+# Local active sansetup inventory. Copy install.template.md to this name.
+install.md
+
 # Editor/OS noise
 .DS_Store
 Thumbs.db

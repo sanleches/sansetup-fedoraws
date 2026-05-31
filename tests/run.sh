@@ -16,6 +16,10 @@ bash -n \
   "$ROOT_DIR/tests/run.sh"
 
 "$ROOT_DIR/tests/inventory_parser_test.sh"
-"$ROOT_DIR/sansetup.sh" inventory >/dev/null
+"$ROOT_DIR/sansetup.sh" --guide "$ROOT_DIR/install.template.md" inventory >/dev/null
+
+for guide in "$ROOT_DIR"/templates/*.md; do
+  "$ROOT_DIR/sansetup.sh" --guide "$guide" inventory >/dev/null
+done
 
 printf 'All tests: PASS\n'

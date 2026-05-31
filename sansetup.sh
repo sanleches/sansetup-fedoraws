@@ -2,10 +2,10 @@
 # sansetup.sh - Fedora Workstation setup entrypoint.
 #
 # This file is intentionally small. It discovers the project root, loads the
-# modular Bash implementation from lib/sansetup, parses install.md as the setup
-# inventory, and dispatches the requested command. Keeping this file thin makes
-# the command stable while allowing the implementation to be maintained in
-# focused modules.
+# modular Bash implementation from lib/sansetup, parses a Markdown setup guide
+# (`install.md` by default), and dispatches the requested command. Keeping this
+# file thin makes the command stable while allowing the implementation to be
+# maintained in focused modules.
 #
 # Supported commands:
 #   menu             Interactive menu, used when no command is provided.
@@ -36,20 +36,52 @@ export SANSETUP_ROOT
 
 # Print command-line usage for non-interactive operation.
 usage() {
-  printf 'Usage: %s [menu|install-all|install-missing|verify|inventory]\n' "$0"
+  printf 'Usage: %s [--guide <file>] [menu|install-all|install-missing|verify|inventory]\n' "$0"
+}
+
+# Parse CLI options and resolve the requested top-level command.
+parse_args() {
+  COMMAND="menu"
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --guide)
+        [ "$#" -ge 2 ] || die "--guide requires a file path"
+        GUIDE_FILE="$2"
+        shift 2
+        ;;
+      -h|--help|help)
+        COMMAND="help"
+        shift
+        ;;
+      menu|install-all|install-missing|verify|inventory)
+        COMMAND="$1"
+        shift
+        ;;
+      *)
+        die "Unknown argument: $1"
+        ;;
+    esac
+  done
 }
 
 # Parse the inventory once, then dispatch the requested top-level command.
 main() {
+  parse_args "$@"
+
+  if [ "$COMMAND" = "help" ]; then
+    usage
+    return 0
+  fi
+
   load_inventory
 
-  case "${1:-menu}" in
+  case "$COMMAND" in
     menu) main_menu ;;
     install-all) install_plan all ;;
     install-missing) install_plan missing ;;
     verify) verify_missing ;;
     inventory) show_inventory_summary ;;
-    -h|--help|help) usage ;;
     *) usage; exit 2 ;;
   esac
 }

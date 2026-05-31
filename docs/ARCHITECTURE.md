@@ -5,7 +5,7 @@
 ## Runtime Flow
 
 1. `sansetup.sh` resolves project root and loads modules.
-2. `inventory.sh` parses `install.md` into runtime arrays.
+2. `inventory.sh` parses the active Markdown guide into runtime arrays (`install.md` by default, or `--guide <file>`).
 3. `checks.sh` verifies current system state.
 4. `installers.sh` applies mutating operations.
 5. `ui.sh` orchestrates menu and plan execution.
@@ -21,7 +21,7 @@
   - Keeps verification/install policy centralized and auditable.
 
 - `inventory.sh`
-  - Owns parsing of machine-readable patterns from `install.md`.
+  - Owns parsing of machine-readable patterns from the Markdown guide.
   - Must remain conservative and avoid parsing commands outside shell fences.
 
 - `checks.sh`
@@ -46,5 +46,11 @@
 ## Testing Strategy
 
 - `tests/inventory_parser_test.sh`: parser behavior and edge cases.
-- `tests/run.sh`: syntax + parser tests + inventory smoke command.
+- `tests/run.sh`: syntax + parser tests + tracked template inventory smoke commands.
 - CI (`.github/workflows/ci.yml`) executes `tests/run.sh` on push/PR.
+
+## Guide Files
+
+- `install.template.md` is tracked and canonical.
+- `install.md` is ignored by git and belongs to the local user.
+- `templates/*.md` are tracked, prebuilt profiles usable directly with `--guide` or as copy sources.
